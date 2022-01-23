@@ -1,0 +1,13 @@
+{
+    "name": "article-service",
+    "version": "0.1",
+    "description": "REST API for articles",
+    "author": "Tom Riley <mail@thomasriley.ca>",
+    "main": "server.js",
+    "scripts": {
+      "start": "node server.js"
+    },
+    "dependencies": {
+      "express": "^4.16.1"
+    }
+  }
