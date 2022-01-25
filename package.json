@@ -1,7 +1,7 @@
 {
-    "name": "article-service",
+    "name": "thomasriley-ca",
     "version": "0.1",
-    "description": "REST API for articles",
+    "description": "Main frontend for thomasriley.ca",
     "author": "Tom Riley <mail@thomasriley.ca>",
     "main": "server.js",
     "scripts": {

@@ -27,8 +27,8 @@
 name: Build and deploy a container to an Azure Web App
 
 env:
-  AZURE_WEBAPP_NAME: article-service
-  AZURE_WEBAPP_SLOT_NAME: article-service-stage
+  AZURE_WEBAPP_NAME: thomasriley-ca
+  AZURE_WEBAPP_SLOT_NAME: thomasriley-ca-stage
 
 on:
   push:
