@@ -18,8 +18,10 @@ const getArticleService = async url => {
 const app = express();
 app.get('/', async (req, res) => {
   try {
+    const startTime = new Date();
     const articleServiceMessage = await getArticleService(ARTICLE_SERVICE_URI);
-    res.send('The website frontend is running! Article service says: ' + articleServiceMessage);
+    const responseTime = new Date() - startTime;
+    res.send('The website frontend is running! Article service says (' + responseTime + ' ms): ' + articleServiceMessage);
   } catch (error) {
     res.send('The website frontend is running! Failed to fetch article service')
   }
