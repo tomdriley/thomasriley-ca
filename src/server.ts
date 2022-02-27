@@ -1,10 +1,11 @@
 import express, { Request, Response } from "express";
 import axios from "axios";
+import { getEnv } from "./utils";
 
 // Constants
 const PORT = 8080;
 const HOST = "0.0.0.0";
-const ARTICLE_SERVICE_URI = "http://article-service.thomasriley.ca";
+const ARTICLE_SERVICE_URI = getEnv("ARTICLE_SERVICE_URI");
 
 const getArticleService = async (url: string) => {
   const articleServiceResponse = await axios.get(url);
