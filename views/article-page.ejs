@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title><%= articleTitle %></title>
+    <link rel="stylesheet" href="/css/minimal.css" />
+    <!-- basic favicon -->
+    <link rel="shortcut icon" href="favicon/favicon.ico" />
+    <meta charset="utf-8" />
+    <meta name="author" content="<%= articleAuthor %>" />
+    <meta
+      name="description"
+      content="A place for Tom to publish random thoughts
+      online."
+    />
+  </head>
+  <body>
+    <header id="site-header">
+      <h1>Tom Riley</h1>
+      <h2>A Personal Website</h2>
+    </header>
+    <nav>
+      <ul>
+        <li><a href="">Home</a></li>
+        <li><a href="">Blog</a></li>
+        <li><a href="">Menu</a></li>
+        <li><a href="">Search</a></li>
+      </ul>
+    </nav>
+    <main>
+      <div class="by-line">
+        By <%= articleAuthor %> on
+        <time datetime="<%- articleDate %>"
+          ><%= (new Date(articleDate)).toDateString(); %></time
+        >
+      </div>
+      <article><%- articleContent %></article>
+    </main>
+    <footer>
+      <p>
+        ©Copyright 2021 by <a href="index.html">Tom Riley</a>. All rights
+        reserved.
+      </p>
+      <a href="#site-header">To the top ↑</a>
+    </footer>
+  </body>
+</html>
