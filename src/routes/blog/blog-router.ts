@@ -1,9 +1,16 @@
 import express, { Router, Request, Response } from "express";
-import { getArticle } from "../../services/fetch-article";
+import { getArticle, getArticleList } from "../../services/fetch-article";
 import { marked } from "marked";
 
 const blogRouter = (): Router => {
   const router = express.Router();
+
+  router.get("/", async (req: Request, res: Response) => {
+    const articles = await getArticleList();
+    if (articles.isOk()) {
+      res.render("article-list-page", { articles: articles.value });
+    }
+  });
 
   router.get("/:articleName", async (req: Request, res: Response) => {
     const articleName = req.params.articleName;

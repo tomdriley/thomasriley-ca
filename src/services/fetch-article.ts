@@ -1,6 +1,6 @@
 import axios, { AxiosError, AxiosResponse } from "axios";
 import { err, ok, Result } from "neverthrow";
-import { Article } from "../article-schemas";
+import { Article, ArticleTitleDate } from "../article-schemas";
 import { getEnv } from "../utils";
 
 class UncaughtError {
@@ -26,4 +26,21 @@ const getArticle = async (
   }
 };
 
-export { getArticle };
+const getArticleList = async (): Promise<
+  Result<ArticleTitleDate[], AxiosError | UncaughtError>
+> => {
+  try {
+    const articles: AxiosResponse<ArticleTitleDate[]> = await axios.get<
+      ArticleTitleDate[]
+    >(ARTICLE_SERVICE_URI + "/api/articles/");
+    return ok(articles.data);
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      return err(error);
+    } else {
+      return err(new UncaughtError(error));
+    }
+  }
+};
+
+export { getArticle, getArticleList };
