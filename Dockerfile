@@ -24,5 +24,7 @@ USER node
 WORKDIR /usr/src/app
 COPY --chown=node:node --from=production-dependencies /usr/src/app/node_modules /usr/src/app/node_modules
 COPY --chown=node:node --from=compile /usr/src/app/dist /usr/src/app/dist
+COPY --chown=node:node --from=compile /usr/src/app/static /usr/src/app/static
+COPY --chown=node:node --from=compile /usr/src/app/views /usr/src/app/views
 EXPOSE 8080
 CMD ["dumb-init", "node", "dist/server.js"]
