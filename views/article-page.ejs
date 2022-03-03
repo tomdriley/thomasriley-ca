@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+  <%- include("head", {pageAuthor: articleAuthor, pageTitle: articleTitle}) %>
+  <body>
+    <%- include("header-nav") %>
+    <main>
+      <div class="by-line">
+        By <%= articleAuthor %> on
+        <time datetime="<%- articleDate %>"
+          ><%= (new Date(articleDate)).toDateString(); %></time
+        >
+      </div>
+      <article><%- articleContent %></article>
+    </main>
+    <%- include("footer") %>
+  </body>
+</html>

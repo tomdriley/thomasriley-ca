@@ -7,6 +7,7 @@ const HOST = "0.0.0.0";
 
 // App
 const app = express();
+app.set("view engine", "ejs");
 app.use("/", router());
 
 app.listen(PORT, HOST);
