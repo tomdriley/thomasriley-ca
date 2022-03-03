@@ -10,7 +10,7 @@
     "compile": "npx tsc -b",
     "compile-debug": "npx tsc --sourcemap",
     "start": "node dist/server.js",
-    "prepare": "husky install"
+    "prepare": "npx husky install"
   },
   "dependencies": {
     "axios": "^0.25.0",
