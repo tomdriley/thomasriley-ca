@@ -5,7 +5,7 @@ interface Article {
   categories: string[];
   tags: string[];
   name: string;
-  content_type: "markdown";
+  content_type: "markdown" | "html";
   content: string;
 }
 

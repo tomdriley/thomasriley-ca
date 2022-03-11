@@ -3,15 +3,14 @@ import { err, ok, Result } from "neverthrow";
 import { Article, ArticleTitleDate } from "../article-schemas";
 import { getEnv } from "../utils";
 
+type ArticleResult = Result<Article, AxiosError | UncaughtError>;
 class UncaughtError {
   constructor(readonly error: unknown) {}
 }
 
 const ARTICLE_SERVICE_URI = getEnv("ARTICLE_SERVICE_URI");
 
-const getArticle = async (
-  name: string
-): Promise<Result<Article, AxiosError | UncaughtError>> => {
+const getArticle = async (name: string): Promise<ArticleResult> => {
   try {
     const article: AxiosResponse<Article> = await axios.get<Article>(
       ARTICLE_SERVICE_URI + "/api/articles/" + name
@@ -43,4 +42,4 @@ const getArticleList = async (): Promise<
   }
 };
 
-export { getArticle, getArticleList };
+export { getArticle, getArticleList, UncaughtError, ArticleResult };
