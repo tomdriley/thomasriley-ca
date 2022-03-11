@@ -18,7 +18,8 @@
     "dbaeumer.vscode-eslint",
     "esbenp.prettier-vscode",
     "ms-azuretools.vscode-docker",
-    "DigitalBrainstem.javascript-ejs-support"
+    "DigitalBrainstem.javascript-ejs-support",
+    "eamodio.gitlens"
   ],
   // Use 'forwardPorts' to make a list of ports inside the container available locally.
   // "forwardPorts": [],
