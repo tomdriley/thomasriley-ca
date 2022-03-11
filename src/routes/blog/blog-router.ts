@@ -1,6 +1,18 @@
 import express, { Router, Request, Response } from "express";
-import { getArticle, getArticleList } from "../../services/fetch-article";
+import {
+  getArticle,
+  getArticleList,
+  UncaughtError,
+} from "../../services/fetch-article";
+import {
+  articleIsCached,
+  getArticleFromCache,
+  cacheArticle,
+} from "../../services/cache-article";
 import { marked } from "marked";
+import { Article } from "../../article-schemas";
+import { AxiosError } from "axios";
+import { Result } from "neverthrow";
 
 const blogRouter = (): Router => {
   const router = express.Router();
@@ -14,24 +26,29 @@ const blogRouter = (): Router => {
 
   router.get("/:articleName", async (req: Request, res: Response) => {
     const articleName = req.params.articleName;
-    const article = await getArticle(articleName);
-    if (article.isOk()) {
-      if (article.value.content_type == "markdown") {
-        const articleHTML = marked.parse(article.value.content);
-        res.render("article-page", {
-          articleTitle: article.value.title,
-          articleDate: article.value.date,
-          articleAuthor: article.value.author,
-          articleContent: articleHTML,
-        });
-      } else {
-        res
-          .status(500)
-          .send("Internal Server Error. Article exists but is not readable.");
-      }
+    let article: Result<Article, AxiosError | UncaughtError>;
+    if (articleIsCached(articleName)) {
+      article = getArticleFromCache(articleName);
     } else {
+      article = await getArticle(articleName);
+      cacheArticle(article);
+    }
+    if (article.isErr()) {
       //TODO give more meaningful 404 page
       res.status(404).send(article);
+      return;
+    }
+    if (article.value.content_type == "markdown") {
+      article.value.content_type = "html";
+      article.value.content = marked.parse(article.value.content);
+    }
+    if (article.value.content_type == "html") {
+      res.render("article-page", {
+        articleTitle: article.value.title,
+        articleDate: article.value.date,
+        articleAuthor: article.value.author,
+        articleContent: article.value.content,
+      });
     }
   });
 
