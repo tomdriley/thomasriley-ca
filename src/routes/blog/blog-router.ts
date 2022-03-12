@@ -1,32 +1,42 @@
 import express, { Router, Request, Response } from "express";
 import {
+  ArticleResult,
+  ArticlesResult,
   getArticle,
   getArticleList,
-  UncaughtError,
 } from "../../services/fetch-article";
 import {
   articleIsCached,
   getArticleFromCache,
   cacheArticle,
+  articlesAreCached,
+  getArticlesFromCache,
+  cacheArticles,
 } from "../../services/cache-article";
 import { marked } from "marked";
-import { Article } from "../../article-schemas";
-import { AxiosError } from "axios";
-import { Result } from "neverthrow";
 
 const blogRouter = (): Router => {
   const router = express.Router();
 
   router.get("/", async (req: Request, res: Response) => {
-    const articles = await getArticleList();
-    if (articles.isOk()) {
-      res.render("article-list-page", { articles: articles.value });
+    let articles: ArticlesResult;
+    if (articlesAreCached()) {
+      articles = getArticlesFromCache();
+    } else {
+      articles = await getArticleList();
+      cacheArticles(articles);
     }
+    if (articles.isErr()) {
+      //TODO give more meaningful 404 page
+      res.status(404).send(articles);
+      return;
+    }
+    res.render("article-list-page", { articles: articles.value });
   });
 
   router.get("/:articleName", async (req: Request, res: Response) => {
     const articleName = req.params.articleName;
-    let article: Result<Article, AxiosError | UncaughtError>;
+    let article: ArticleResult;
     if (articleIsCached(articleName)) {
       article = getArticleFromCache(articleName);
     } else {

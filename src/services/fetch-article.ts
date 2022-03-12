@@ -4,6 +4,8 @@ import { Article, ArticleTitleDate } from "../article-schemas";
 import { getEnv } from "../utils";
 
 type ArticleResult = Result<Article, AxiosError | UncaughtError>;
+type ArticlesResult = Result<ArticleTitleDate[], AxiosError | UncaughtError>;
+
 class UncaughtError {
   constructor(readonly error: unknown) {}
 }
@@ -25,9 +27,7 @@ const getArticle = async (name: string): Promise<ArticleResult> => {
   }
 };
 
-const getArticleList = async (): Promise<
-  Result<ArticleTitleDate[], AxiosError | UncaughtError>
-> => {
+const getArticleList = async (): Promise<ArticlesResult> => {
   try {
     const articles: AxiosResponse<ArticleTitleDate[]> = await axios.get<
       ArticleTitleDate[]
@@ -42,4 +42,10 @@ const getArticleList = async (): Promise<
   }
 };
 
-export { getArticle, getArticleList, UncaughtError, ArticleResult };
+export {
+  getArticle,
+  getArticleList,
+  UncaughtError,
+  ArticleResult,
+  ArticlesResult,
+};
