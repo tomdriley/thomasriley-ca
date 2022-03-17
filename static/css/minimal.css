@@ -1,3 +1,64 @@
+/* -----------------------------------------------------------------------------
+  Global
+----------------------------------------------------------------------------- */
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* -----------------------------------------------------------------------------
+  Layout
+----------------------------------------------------------------------------- */
+
+body {
+  margin: 1em auto;
+  max-width: 40em;
+  padding: 0 0.62em;
+}
+
+/* Remove bullets on image list */
+.blocks-gallery-item {
+  list-style: none;
+}
+
+/* Fit image to parent container */
+img {
+  width: 100%;
+}
+
+/* Remove margin and padding around image gallery */
+figure,
+.wp-block-gallery,
+.blocks-gallery-grid,
+.blocks-gallery-item {
+  padding: 0;
+  margin: 0;
+}
+
+@media print {
+  body {
+    max-width: none;
+  }
+}
+
+/* -----------------------------------------------------------------------------
+  Typography
+----------------------------------------------------------------------------- */
+
+h1,
+h2,
+h3 {
+  font: 2em/1.2 sans-serif;
+}
+
+body {
+  font: 1.2em/1.62 sans-serif;
+}
+
+/* -----------------------------------------------------------------------------
+  Colors
+----------------------------------------------------------------------------- */
+
 @media (prefers-color-scheme: dark) {
   body {
     color: #fff;
@@ -12,24 +73,5 @@
   }
   a:visited {
     color: #c9f;
-  }
-}
-
-body {
-  margin: 1em auto;
-  max-width: 40em;
-  padding: 0 0.62em;
-  font: 1.2em/1.62 sans-serif;
-}
-
-h1,
-h2,
-h3 {
-  font: 2em/1.2 sans-serif;
-}
-
-@media print {
-  body {
-    max-width: none;
   }
 }
