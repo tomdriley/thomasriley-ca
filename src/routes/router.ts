@@ -32,7 +32,9 @@ const router = (): Router => {
 
     // Render a 404 view or send a 404 error message to the client
     // res.render('not-found-page');
-    res.send("404: The requested resource was not found.");
+    res.render("error-page", {
+      content: "404: The requested resource was not found.",
+    });
   });
 
   // Error handling middleware
@@ -45,7 +47,9 @@ const router = (): Router => {
 
     // Render an error view or send a generic error message to the client
     // res.render('error-page', { error: err });
-    res.send("500: An error occurred while processing your request.");
+    res.render("error-page", {
+      content: "500: An error occurred while processing your request.",
+    });
   });
 
   // Return the configured router instance
