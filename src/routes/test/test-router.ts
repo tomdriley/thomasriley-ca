@@ -27,7 +27,7 @@ const testRouter = (): Router => {
     if (articleServiceMessage.isErr()) {
       // If there was an error fetching the message from the Article Service, log it and send back to router
       console.error(
-        `Failed to fetch article service from ${ARTICLE_SERVICE_URI}`
+        `Failed to fetch article service from ${ARTICLE_SERVICE_URI.value}`
       );
       return next(articleServiceMessage.error);
     }
