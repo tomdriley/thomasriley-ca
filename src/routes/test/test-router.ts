@@ -1,5 +1,5 @@
 // Import the required modules and dependencies
-import express, { Router, Request, Response } from "express";
+import express, { Router, Request, Response, NextFunction } from "express";
 import { getEnv, fetchDataFromService } from "../../utils";
 
 // Retrieve the ARTICLE_SERVICE_URI from environment variables
@@ -11,31 +11,36 @@ const testRouter = (): Router => {
   const router = express.Router();
 
   // Define a route handler for the root path of the testRouter
-  router.get("/", async (req: Request, res: Response) => {
-    try {
-      // Record the start time of the request to the Article Service
-      const startTime: Date = new Date();
-      // Get the message from the Article Service using the fetchDataFromService function
-      const articleServiceMessage = await fetchDataFromService(
-        ARTICLE_SERVICE_URI
-      );
-      // Record the end time of the request to the Article Service
-      const endTime: Date = new Date();
-      // Calculate the response time of the Article Service request
-      const responseTimeMilliseconds = endTime.getTime() - startTime.getTime();
-      // Send a response to the client with the response time and message from the Article Service
-      res.send(
-        `The website frontend is running! Article service says (${responseTimeMilliseconds} ms): ${articleServiceMessage}`
-      );
-    } catch (error) {
-      // If there was an error fetching the message from the Article Service, send an error message to the client
-      console.error("Failed to fetch article service:", error);
-      res
-        .status(500)
-        .send(
-          "The website frontend is running! Failed to fetch article service"
-        );
+  router.get("/", async (_req: Request, res: Response, next: NextFunction) => {
+    // Make sure the Article Service URI was set
+    if (ARTICLE_SERVICE_URI.isErr()) {
+      return next(ARTICLE_SERVICE_URI.error);
     }
+
+    // Record the start time of the request to the Article Service
+    const startTime: Date = new Date();
+    // Get the message from the Article Service using the fetchDataFromService function
+    const articleServiceMessage = await fetchDataFromService<string>(
+      ARTICLE_SERVICE_URI.value
+    );
+
+    if (articleServiceMessage.isErr()) {
+      // If there was an error fetching the message from the Article Service, log it and send back to router
+      console.error(
+        `Failed to fetch article service from ${ARTICLE_SERVICE_URI}`
+      );
+      return next(articleServiceMessage.error);
+    }
+
+    // Record the end time of the request to the Article Service
+    const endTime: Date = new Date();
+
+    // Calculate the response time of the Article Service request
+    const responseTimeMilliseconds = endTime.getTime() - startTime.getTime();
+    // Send a response to the client with the response time and message from the Article Service
+    res.send(
+      `The website frontend is running! Article service says (${responseTimeMilliseconds} ms): ${articleServiceMessage.value}`
+    );
   });
 
   // Return the configured router
