@@ -2,6 +2,7 @@
   Global
 ----------------------------------------------------------------------------- */
 
+/* Scroll behavior */
 html {
   scroll-behavior: smooth;
 }
@@ -10,6 +11,7 @@ html {
   Layout
 ----------------------------------------------------------------------------- */
 
+/* Container for body */
 body {
   margin: 1em auto;
   max-width: 40em;
@@ -35,6 +37,7 @@ figure,
   margin: 0;
 }
 
+/* Full width for print view */
 @media print {
   body {
     max-width: none;
@@ -45,20 +48,27 @@ figure,
   Typography
 ----------------------------------------------------------------------------- */
 
+/* Header font styles */
 h1,
 h2,
 h3 {
   font: 2em/1.2 sans-serif;
 }
 
+/* Body font styles */
 body {
   font: 1.2em/1.62 sans-serif;
+}
+
+#error-message {
+  font: 3em/1.2 sans-serif;
 }
 
 /* -----------------------------------------------------------------------------
   Colors
 ----------------------------------------------------------------------------- */
 
+/* Dark mode styles */
 @media (prefers-color-scheme: dark) {
   body {
     color: #fff;
