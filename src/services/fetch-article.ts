@@ -23,7 +23,7 @@ const getArticle = async (name: string): Promise<ArticleResult> => {
     return err(ARTICLE_SERVICE_URI.error);
   }
   return fetchDataFromService<Article>(
-    ARTICLE_SERVICE_URI + "/api/articles/" + name
+    ARTICLE_SERVICE_URI.value + "/api/articles/" + name
   );
 };
 
@@ -33,7 +33,7 @@ const getArticleList = async (): Promise<ArticlesResult> => {
     return err(ARTICLE_SERVICE_URI.error);
   }
   return fetchDataFromService<ArticleTitleDate[]>(
-    ARTICLE_SERVICE_URI + "/api/articles/"
+    ARTICLE_SERVICE_URI.value + "/api/articles/"
   );
 };
 
