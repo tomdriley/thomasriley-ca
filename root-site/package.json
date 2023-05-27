@@ -9,8 +9,7 @@
     "lint": "npx eslint .",
     "compile": "npx tsc -b",
     "compile-debug": "npx tsc --sourcemap",
-    "start": "node dist/server.js",
-    "prepare": "npx husky install"
+    "start": "node dist/server.js"
   },
   "dependencies": {
     "axios": "^0.25.0",
@@ -35,7 +34,6 @@
     "eslint-config-prettier": "^8.4.0",
     "eslint-plugin-ejs": "^0.0.2",
     "eslint-plugin-neverthrow": "^1.1.4",
-    "husky": "^7.0.4",
     "lint-staged": "^12.3.4",
     "prettier": "^2.5.1"
   },

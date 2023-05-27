@@ -1,0 +1,33 @@
+{
+  "name": "article-service",
+  "version": "0.0.1",
+  "description": "REST API for articles",
+  "author": "Tom Riley <mail@thomasriley.ca>",
+  "main": "server.js",
+  "scripts": {
+    "format": "npx prettier --write .",
+    "lint": "npx eslint .",
+    "compile": "npx tsc -b",
+    "compile-debug": "npx tsc --sourcemap",
+    "start": "node dist/server.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.0.0",
+    "express": "^4.16.1",
+    "mongodb": "^4.3.1",
+    "typescript": "^4.5.5"
+  },
+  "devDependencies": {
+    "@tsconfig/node16": "^1.0.2",
+    "@types/express": "^4.17.13",
+    "@typescript-eslint/eslint-plugin": "^5.10.1",
+    "@typescript-eslint/parser": "^5.10.1",
+    "eslint": "^8.7.0",
+    "eslint-config-prettier": "^8.3.0",
+    "lint-staged": "^12.3.4",
+    "prettier": "^2.5.1"
+  },
+  "lint-staged": {
+    "**/*": "prettier --write --ignore-unknown"
+  }
+}
