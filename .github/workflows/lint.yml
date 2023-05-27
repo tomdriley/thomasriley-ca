@@ -13,7 +13,19 @@ jobs:
         uses: actions/setup-node@v2
         with:
           node-version: ${{ matrix.node-version }}
-      - name: Install dependencies
-        run: npm ci
-      - name: Run lint
-        run: npm run lint
+      - name: Install dependencies for root-site
+        run: |
+          cd root-site
+          npm ci
+      - name: Run lint on root-site
+        run: |
+          cd root-site
+          npm run lint
+      - name: Install dependencies for article-service
+        run: |
+          cd article-service
+          npm ci
+      - name: Run lint on article-service
+        run: |
+          cd article-service
+          npm run lint
