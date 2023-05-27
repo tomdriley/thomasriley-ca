@@ -7,3 +7,5 @@ Dockerfile
 .github
 .devcontainer
 dist
+.env
+.env.test
