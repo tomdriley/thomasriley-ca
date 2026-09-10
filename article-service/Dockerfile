@@ -1,5 +1,4 @@
 FROM node:lts-alpine AS dev-dependencies
-RUN npm install -g typescript
 USER node
 WORKDIR /usr/src/app
 COPY --chown=node:node package*.json /usr/src/app
@@ -9,13 +8,13 @@ FROM node:lts-alpine AS production-dependencies
 USER node
 WORKDIR /usr/src/app
 COPY --chown=node:node package*.json /usr/src/app
-RUN npm ci --only=production
+RUN npm ci --omit=dev
 
 FROM dev-dependencies AS compile
 USER node
 WORKDIR /usr/src/app
 COPY --chown=node:node . /usr/src/app
-RUN tsc -b /usr/src/app
+RUN npx tsc -b /usr/src/app
 
 FROM node:lts-alpine AS final
 RUN apk add dumb-init
