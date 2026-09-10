@@ -1,7 +1,7 @@
 import dotenv from "dotenv";
 
 // Get .env if available
-dotenv.config();
+dotenv.config({ quiet: true });
 
 const getEnv = (envVarName: string): string => {
   if (process.env[envVarName] === undefined) {
