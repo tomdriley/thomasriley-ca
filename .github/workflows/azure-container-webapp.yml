@@ -24,11 +24,11 @@
 # For more information on the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
 # For more samples to get started with GitHub Action workflows to deploy to Azure: https://github.com/Azure/actions-workflow-samples
 
-name: Build and deploy a container to an Azure Web App
+name: Build and deploy the website
 
 env:
   AZURE_WEBAPP_NAME: thomasriley-ca
-  AZURE_WEBAPP_SLOT_NAME: thomasriley-ca-stage
+  AZURE_WEBAPP_SLOT_NAME: stage
 
 on:
   push:
@@ -36,9 +36,17 @@ on:
       - main
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      digest: ${{ steps.publish.outputs.digest }}
 
     steps:
       - uses: actions/checkout@v7
@@ -57,10 +65,11 @@ jobs:
         run: echo "REPO=${GITHUB_REPOSITORY,,}" >>${GITHUB_ENV}
 
       - name: Build and push container image to registry
+        id: publish
         uses: docker/build-push-action@v7
         with:
           push: true
-          tags: ghcr.io/${{ env.REPO }}:${{ github.sha }}
+          tags: ghcr.io/${{ env.REPO }}:website-${{ github.sha }}
           context: ./root-site
           file: ./root-site/Dockerfile
 
@@ -79,5 +88,7 @@ jobs:
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v2
         with:
+          app-name: ${{ env.AZURE_WEBAPP_NAME }}
+          slot-name: ${{ env.AZURE_WEBAPP_SLOT_NAME }}
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-          images: "ghcr.io/${{ env.REPO }}:${{ github.sha }}"
+          images: "ghcr.io/${{ env.REPO }}@${{ needs.build.outputs.digest }}"
