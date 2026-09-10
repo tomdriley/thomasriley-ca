@@ -61,6 +61,7 @@ jobs:
         with:
           push: true
           tags: ghcr.io/${{ env.REPO }}:${{ github.sha }}
+          context: ./article-service
           file: ./article-service/Dockerfile
 
   deploy:
