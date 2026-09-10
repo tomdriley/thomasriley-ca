@@ -12,7 +12,7 @@ type AxiosResult<Type> = Result<Type, AxiosError | UncaughtError>;
 
 // Load environment variables from a .env file if available
 // This is useful for development and testing environments
-dotenv.config();
+dotenv.config({ quiet: true });
 
 // getEnv is a function that retrieves the value of an environment variable
 // It takes one parameter, envVarName, which is the name of the environment variable
