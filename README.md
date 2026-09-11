@@ -23,3 +23,21 @@ To build and test with Docker:
 docker build --pull --rm -f "Dockerfile" -t thomasrileyca:latest "."
 docker run --rm -d  -p 8080:8080/tcp --env-file .env thomasrileyca:latest
 ```
+
+## Deployment
+
+Each app builds from its own directory as the Docker context and publishes a
+distinctly named image to the same GHCR package, so the two builds can't
+overwrite each other:
+
+| App | Context | Image tag | Azure target |
+| --- | --- | --- | --- |
+| Website | `root-site` | `website-<sha>` | `thomasriley-ca`, slot `stage` |
+| Article service | `article-service` | `article-service-<sha>` | `article-service`, slot `stage` |
+
+Each deploy job receives the digest published by its own build job and deploys
+`ghcr.io/tomdriley/thomasriley-ca@sha256:...`, so a slot can only ever run the
+image that build produced.
+
+Merging to `main` deploys both apps to their `stage` slot. Promoting to
+production is a manual slot swap.
