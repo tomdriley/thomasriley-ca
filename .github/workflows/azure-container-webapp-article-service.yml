@@ -76,9 +76,6 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     needs: build
-    # The stage slot is deliberately stopped, so pushes only publish an image.
-    # Running this workflow manually is the authorization to deploy it.
-    if: github.event_name == 'workflow_dispatch'
     environment:
       name: "Development"
       url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}

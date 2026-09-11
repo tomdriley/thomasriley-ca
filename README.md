@@ -39,6 +39,5 @@ Each deploy job receives the digest published by its own build job and deploys
 `ghcr.io/tomdriley/thomasriley-ca@sha256:...`, so a slot can only ever run the
 image that build produced.
 
-The website deploys to its stage slot on every push to `main`. The article
-service's stage slot is currently stopped, so pushes only build and publish its
-image — running that workflow manually is what authorizes an actual deployment.
+Merging to `main` deploys both apps to their `stage` slot. Promoting to
+production is a manual slot swap.
