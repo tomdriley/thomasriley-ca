@@ -22,6 +22,7 @@ const DatabaseService = {
       throw new Error("Database access is disabled in synthetic mode");
     }
     await client.connect();
+    await client.db(getEnv("MONGO_DATABASE")).command({ ping: 1 });
   },
 } as const;
 

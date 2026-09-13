@@ -7,13 +7,22 @@ test("concurrent reads, health checks and errors never close the shared pool", a
   process.env.MONGO_DATABASE = "test";
   delete process.env.ARTICLE_DATA_MODE;
   let closed = 0;
+  let pings = 0;
+  let available = true;
   const original = {
     connect: MongoClient.prototype.connect,
     db: MongoClient.prototype.db,
     close: MongoClient.prototype.close,
   };
   MongoClient.prototype.connect = async function () { return this; };
-  MongoClient.prototype.db = () => ({});
+  MongoClient.prototype.db = () => ({
+    command: async (command) => {
+      assert.deepEqual(command, { ping: 1 });
+      pings += 1;
+      if (!available) throw new Error("database unavailable");
+      return { ok: 1 };
+    },
+  });
   MongoClient.prototype.close = async () => { closed += 1; };
   let release;
   const barrier = new Promise((resolve) => { release = resolve; });
@@ -26,6 +35,10 @@ test("concurrent reads, health checks and errors never close the shared pool", a
     });
     assert.equal(await service.withDB(async () => "fast"), "fast");
     await service.testConnection();
+    assert.equal(pings, 1);
+    available = false;
+    await assert.rejects(service.testConnection(), /database unavailable/);
+    assert.equal(pings, 2);
     await assert.rejects(service.withDB(async () => {
       throw new Error("query failed");
     }), /query failed/);
