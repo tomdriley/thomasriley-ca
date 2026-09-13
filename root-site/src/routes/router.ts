@@ -4,6 +4,7 @@ import express, { Router, Request, Response, NextFunction } from "express";
 // Import the testRouter and blogRouter modules for handling test and blog routes
 import testRouter from "./test/test-router";
 import blogRouter from "./blog/blog-router";
+import fantasyFootballRouter from "./fantasy-football/fantasy-football-router";
 
 // Import the path module for handling file and directory paths
 import path from "path";
@@ -13,6 +14,11 @@ import axios from "axios";
 const router = (): Router => {
   // Create a new express router
   const router = express.Router();
+
+  // Hand /fantasy-football and everything beneath it to the fantasy app before
+  // the blog's own static files, pages and 404 handler can claim those paths.
+  // Nothing may parse or buffer the request body ahead of this.
+  router.use(fantasyFootballRouter());
 
   // Serve static files from the "static" directory
   router.use(express.static(path.join(__dirname, "../../static")));

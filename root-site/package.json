@@ -9,6 +9,7 @@
     "lint": "npx eslint .",
     "compile": "npx tsc -b",
     "compile-debug": "npx tsc --sourcemap",
+    "test": "node --test \"tests/*.test.cjs\"",
     "start": "node dist/server.js"
   },
   "dependencies": {
@@ -16,6 +17,7 @@
     "dotenv": "^17.4.2",
     "ejs": "^3.1.6",
     "express": "^4.16.1",
+    "http-proxy-middleware": "^3.0.7",
     "marked": "^4.0.12",
     "neverthrow": "^4.3.1",
     "node-cache": "^5.1.2",

@@ -12,6 +12,7 @@ AZ = os.environ.get("AZ", "az")
 SUBSCRIPTION = "b9ee5d35-c096-4772-8a56-0529054b4dcf"
 GROUP = "ff-westus3-pilot"
 REPO = "tomdriley/thomasriley-ca"
+FANTASY_APP = "thomasriley-fantasy-w3-pilot"
 RG_ID = f"/subscriptions/{SUBSCRIPTION}/resourceGroups/{GROUP}"
 
 
@@ -61,6 +62,21 @@ def main():
             article = az("webapp", "show", "-g", GROUP,
                          "-n", "thomasriley-article-w3-pilot", "--slot", "stage")
             settings["ARTICLE_SERVICE_URI"] = f"https://{article['defaultHostName']}"
+            # The blog reverse-proxies /fantasy-football/ to the fantasy app.
+            # Stage must resolve the fantasy *stage* slot; there is deliberately
+            # no fallback to the fantasy production app.
+            fantasy = az("webapp", "show", "-g", GROUP,
+                         "-n", FANTASY_APP, "--slot", "stage")
+            fantasy_host = fantasy["defaultHostName"]
+            if not fantasy_host.startswith(f"{FANTASY_APP}-stage."):
+                raise SystemExit(
+                    f"Unexpected fantasy stage host {fantasy_host!r}; refusing to "
+                    "configure the blog stage slot."
+                )
+            settings["FANTASY_APP_ORIGIN"] = f"https://{fantasy_host}"
+            # TLS terminates at the App Service front end, so the external
+            # scheme is stated here rather than read from a request header.
+            settings["FANTASY_FORWARDED_PROTO"] = "https"
         az("rest", "--method", "put",
            "--url", f"{stage_id}/config/appsettings?api-version=2024-11-01",
            "--body", json.dumps({"properties": settings}))

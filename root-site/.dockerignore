@@ -1,5 +1,6 @@
 node_modules
 dist
+tests
 *.tsbuildinfo
 npm-debug.log
 .env*

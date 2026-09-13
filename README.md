@@ -8,6 +8,63 @@ Web service to generate front-end of blog site. Communicates with other backend 
 
 Built with TypeScript and Node.js for the server. Uses EJS rendering for pages.
 
+## Fantasy football proxy
+
+`/fantasy-football` and everything beneath it is reverse-proxied to a separate
+fantasy football App Service; the two applications and their deployment
+pipelines stay independent. The blog does not enumerate the fantasy app's
+routes, so pages, assets, its API and its `/fantasy-football/.auth/*`
+endpoints all flow through the same prefix, with the prefix preserved.
+
+| Setting | Required | Meaning |
+| --- | --- | --- |
+| `FANTASY_APP_ORIGIN` | yes, to enable | Bare upstream origin, e.g. `https://thomasriley-fantasy-w3-pilot-stage.azurewebsites.net`. No path, query or credentials. |
+| `FANTASY_FORWARDED_PROTO` | behind TLS termination | `https` or `http`; the scheme reported to the fantasy app. Defaults to the blog's own connection scheme. |
+| `FANTASY_APP_TIMEOUT_MS` | no | Upstream timeout, default `30000`. |
+
+Stage and production configure these separately. `bootstrap-stage.py` resolves
+`FANTASY_APP_ORIGIN` for the blog's stage slot from the fantasy app's `stage`
+slot and fails rather than falling back to the fantasy production app. When
+`FANTASY_APP_ORIGIN` is unset the proxy is not mounted and the prefix simply
+404s, so production routing stays off until it is configured deliberately; an
+invalid value returns 503 instead of proxying somewhere unintended.
+
+Behavior worth knowing before changing this code:
+
+- The proxy is mounted ahead of the static-file, page and 404 handlers, and
+  nothing may parse or buffer request bodies ahead of it. Requests stream
+  through `http-proxy-middleware`; pages are never fetched and re-rendered.
+- Status codes, redirects, `Set-Cookie`, content types and cache-control
+  headers are relayed untouched. Cookie and redirect rewriting are
+  deliberately not configured — that contract belongs to the fantasy app.
+- `/fantasy-football` redirects to `/fantasy-football/` with a 308, so methods
+  and bodies survive canonicalization. Similarly named paths such as
+  `/fantasy-football-picks` are left to the blog.
+- Client-supplied forwarding and Azure identity headers (`X-Forwarded-*`,
+  `Forwarded`, `X-Real-IP`, `x-ms-client-principal*`, `x-ms-token-*`, and the
+  blog's own `x-arr-*`/`disguised-host` front-end headers) are stripped before
+  the blog sets its own forwarding metadata. The browser's `Origin` is passed
+  through unchanged so the fantasy app can run its own CSRF checks.
+- The blog trusts exactly one hop, its Azure front end (`trust proxy` is `1`).
+  Forwarding headers are not by themselves proof that a request came through
+  the blog; the fantasy app restricts its origin at the network layer.
+- Upstream failures return 502, timeouts 504, and neither affects the rest of
+  the blog. Only the method and path are logged — never query strings, headers
+  or bodies.
+- Sharing `thomasriley.ca` means both apps share one browser security origin,
+  so a script-injection flaw in the blog can reach a signed-in fantasy user. A
+  path prefix is routing, not isolation.
+
+`root-site/tests` covers this boundary end to end (prefix preservation, method
+and body forwarding, cookies, redirects, header stripping, upstream failure and
+the untouched blog routes) and runs in the lint workflow:
+
+```bash
+cd root-site
+npm run compile
+npm test
+```
+
 To build and test locally:
 
 ```bash
@@ -61,7 +118,9 @@ script deliberately patches only `linuxFxVersion`.
 Stage has an explicit settings allowlist and no database connection strings.
 The article service uses `ARTICLE_DATA_MODE=synthetic` to serve a fixed article;
 database access throws in this mode. The website points only to the stage
-article service. Production behavior is unchanged when this flag is absent.
+article service, and only to the fantasy app's stage slot for the
+`/fantasy-football/` proxy. Production behavior is unchanged when these flags
+are absent.
 Stage FTP/SCM basic authentication is disabled. No production certificates,
 source apps, or production application settings are changed by bootstrap.
 Re-running bootstrap reapplies the stage allowlist but retains its deployed

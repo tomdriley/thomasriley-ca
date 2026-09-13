@@ -21,6 +21,11 @@ jobs:
         run: |
           cd root-site
           npm run lint
+      - name: Check the fantasy football proxy boundary
+        run: |
+          cd root-site
+          npm run compile
+          node --test tests/*.test.cjs
       - name: Install dependencies for article-service
         run: |
           cd article-service

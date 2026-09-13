@@ -12,6 +12,9 @@ const HOST = "0.0.0.0";
 const app = express();
 // Set the view engine to EJS, which allows embedding JavaScript in HTML templates
 app.set("view engine", "ejs");
+// Trust the single Azure App Service front end in front of this container so
+// req.protocol and req.ip reflect the browser rather than the load balancer
+app.set("trust proxy", 1);
 // Mount the custom router on the root path ("/") of the app
 app.use("/", router());
 
