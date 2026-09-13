@@ -68,8 +68,11 @@ Re-running bootstrap reapplies the stage allowlist but retains its deployed
 image. Existing public GHCR images require no registry password.
 
 To promote, run **Promote verified stage digest to production** from `main`,
-select the service, enter its current stage `sha256:...` digest, and type
-`PROMOTE`. The workflow checks that stage is configured with that digest and
+select the service, enter its current stage `sha256:...` digest and successful
+component stage workflow run ID, and type `PROMOTE`. The workflow requires
+that run's immutable `stage-tested-<service>` artifact to match the component,
+digest, and source revision. Verification artifacts expire after 30 days;
+deploy to stage again if the artifact has expired. It also checks that stage is configured with that digest and
 responds over HTTP before updating only the pilot production image. It does
 not rebuild or swap slots/settings. Per-app deployment concurrency serializes
 stage deployment and promotion. This manual workflow is the explicit approval

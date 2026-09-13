@@ -10,6 +10,10 @@ on:
         description: Exact sha256 digest currently verified on stage
         type: string
         required: true
+      stage_run_id:
+        description: Successful component stage workflow run containing its immutable verification artifact
+        type: string
+        required: true
       confirmation:
         description: Type PROMOTE to update the selected pilot production app
         type: string
@@ -26,9 +30,41 @@ jobs:
       cancel-in-progress: false
     permissions:
       contents: read
+      actions: read
       id-token: write
     steps:
       - uses: actions/checkout@v7
+      - name: Validate successful component run
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ inputs.stage_run_id }}
+          SERVICE: ${{ inputs.service }}
+        run: |
+          [[ "$RUN_ID" =~ ^[0-9]+$ ]]
+          workflow=.github/workflows/azure-container-webapp.yml
+          if [[ "$SERVICE" == article-service ]]; then
+            workflow=.github/workflows/azure-container-webapp-article-service.yml
+          fi
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RUN_ID" \
+            --jq '{conclusion, head_branch, path, head_sha}' > verified-run.json
+          jq -e --arg path "$workflow" \
+            '.conclusion == "success" and .head_branch == "main" and .path == $path' verified-run.json
+      - uses: actions/download-artifact@v4
+        with:
+          name: stage-tested-${{ inputs.service }}
+          path: stage-verification
+          run-id: ${{ inputs.stage_run_id }}
+          github-token: ${{ github.token }}
+      - name: Validate tested digest and component
+        env:
+          APP: ${{ inputs.service == 'website' && 'thomasriley-blog-w3-pilot' || 'thomasriley-article-w3-pilot' }}
+          SERVICE: ${{ inputs.service }}
+          DIGEST: ${{ inputs.digest }}
+        run: |
+          jq -e --arg app "$APP" --arg service "$SERVICE" --arg digest "$DIGEST" \
+            --arg revision "$(jq -r .head_sha verified-run.json)" \
+            '.app == $app and .service == $service and .digest == $digest and .revision == $revision' \
+            stage-verification/verified.json
       - uses: azure/login@v3
         with:
           client-id: ${{ vars.AZURE_CLIENT_ID }}

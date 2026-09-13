@@ -59,3 +59,20 @@ jobs:
           APP: ${{ inputs.app }}
           DIGEST: ${{ needs.build.outputs.digest }}
         run: bash scripts/deploy-image.sh "$APP" stage "$DIGEST"
+      - name: Record tested component
+        env:
+          APP: ${{ inputs.app }}
+          SERVICE: ${{ inputs.service }}
+          DIGEST: ${{ needs.build.outputs.digest }}
+        run: |
+          mkdir -p stage-verification
+          jq -n --arg app "$APP" --arg service "$SERVICE" --arg digest "$DIGEST" \
+            --arg revision "$GITHUB_SHA" \
+            '{app: $app, service: $service, digest: $digest, revision: $revision}' \
+            > stage-verification/verified.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: stage-tested-${{ inputs.service }}
+          path: stage-verification/verified.json
+          if-no-files-found: error
+          retention-days: 30
