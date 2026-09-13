@@ -77,6 +77,8 @@ gate; GitHub environment required-reviewer rules can be added separately.
 No production promotion occurs automatically.
 
 The job summary records previous/requested images for rollback and verifies
-Azure's configured digest plus HTTP availability. These checks do not attest
+Azure's configured digest plus article HTTP availability. Stage checks also
+assert synthetic article content, including frontend-to-backend rendering.
+These checks do not attest
 the digest of the running process. For rollback, redeploy a known-good digest
 to stage, verify it, then promote that digest through the same workflow.
