@@ -29,3 +29,8 @@ jobs:
         run: |
           cd article-service
           npm run lint
+      - name: Check concurrent database access
+        run: |
+          cd article-service
+          npm run compile
+          node --test tests/*.test.cjs
