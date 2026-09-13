@@ -1,0 +1,41 @@
+name: Promote verified stage digest to production
+on:
+  workflow_dispatch:
+    inputs:
+      service:
+        type: choice
+        options: [website, article-service]
+        required: true
+      digest:
+        description: Exact sha256 digest currently verified on stage
+        type: string
+        required: true
+      confirmation:
+        description: Type PROMOTE to update the selected pilot production app
+        type: string
+        required: true
+permissions:
+  contents: read
+jobs:
+  promote:
+    if: github.ref == 'refs/heads/main' && inputs.confirmation == 'PROMOTE'
+    runs-on: ubuntu-latest
+    environment: production-${{ inputs.service }}
+    concurrency:
+      group: deploy-${{ inputs.service == 'website' && 'thomasriley-blog-w3-pilot' || 'thomasriley-article-w3-pilot' }}
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: azure/login@v3
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: b9ee5d35-c096-4772-8a56-0529054b4dcf
+      - name: Promote without swapping settings
+        env:
+          APP: ${{ inputs.service == 'website' && 'thomasriley-blog-w3-pilot' || 'thomasriley-article-w3-pilot' }}
+          DIGEST: ${{ inputs.digest }}
+        run: bash scripts/deploy-image.sh "$APP" production "$DIGEST"

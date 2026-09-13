@@ -1,13 +1,17 @@
 import { Db, MongoClient } from "mongodb";
 import { getEnv } from "../utils";
 
-const MONGO_CONNECTION_STRING = getEnv("CUSTOMCONNSTR_AZURE_TOMRILEY_BLOG_DB");
-const client = new MongoClient(MONGO_CONNECTION_STRING);
+const client = process.env.ARTICLE_DATA_MODE === "synthetic"
+  ? null
+  : new MongoClient(getEnv("CUSTOMCONNSTR_AZURE_TOMRILEY_BLOG_DB"));
 
 const DatabaseService = {
   async withDB<Type>(
     operations: (database: Db) => Promise<Type>
   ): Promise<Type> {
+    if (client === null) {
+      throw new Error("Database access is disabled in synthetic mode");
+    }
     try {
       await client.connect();
 
@@ -19,6 +23,9 @@ const DatabaseService = {
     }
   },
   async testConnection() {
+    if (client === null) {
+      throw new Error("Database access is disabled in synthetic mode");
+    }
     try {
       await client.connect();
     } finally {

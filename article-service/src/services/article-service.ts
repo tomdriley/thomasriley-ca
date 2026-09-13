@@ -3,8 +3,23 @@ import DatabaseService from "./database-service";
 import { Db, SortDirection } from "mongodb";
 import { getEnv } from "../utils";
 
+const syntheticArticle: Article = {
+  name: "stage-smoke-test",
+  title: "Stage smoke test",
+  author: "Stage",
+  date: "2026-01-01",
+  categories: [],
+  tags: [],
+  content_type: "markdown",
+  content: "Synthetic deployment verification. No production data.",
+};
+
 const ArticleService = {
   async getArticleList(): Promise<ArticleTitleDate[]> {
+    if (process.env.ARTICLE_DATA_MODE === "synthetic") {
+      const { name, title, date } = syntheticArticle;
+      return [{ name, title, date }];
+    }
     const articles = await DatabaseService.withDB(async (database: Db) => {
       const articles_collection = database.collection(
         getEnv("MONGO_ARTICLES_COLLECTION")
@@ -31,6 +46,9 @@ const ArticleService = {
     return articles;
   },
   async getArticle(name: string): Promise<Article | null> {
+    if (process.env.ARTICLE_DATA_MODE === "synthetic") {
+      return name === syntheticArticle.name ? syntheticArticle : null;
+    }
     const article = await DatabaseService.withDB(async (database: Db) => {
       const articles_collection = database.collection(
         getEnv("MONGO_ARTICLES_COLLECTION")
