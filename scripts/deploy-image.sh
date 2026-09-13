@@ -21,6 +21,13 @@ verify_http() {
     else
       grep -qF 'Synthetic deployment verification. No production data.' <<< "$body"
     fi
+  elif [[ "$app" == thomasriley-article-w3-pilot ]]; then
+    jq -e 'type == "array" and length > 0 and all(.[]; .name != "stage-smoke-test")' <<< "$body" > /dev/null
+  else
+    if grep -qF 'Synthetic deployment verification. No production data.' <<< "$body"; then
+      echo "Production unexpectedly rendered synthetic data" >&2
+      return 1
+    fi
   fi
 }
 case "$target" in
