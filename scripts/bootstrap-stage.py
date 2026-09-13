@@ -74,9 +74,10 @@ def main():
                     "configure the blog stage slot."
                 )
             settings["FANTASY_APP_ORIGIN"] = f"https://{fantasy_host}"
-            # TLS terminates at the App Service front end, so the external
-            # scheme is stated here rather than read from a request header.
-            settings["FANTASY_FORWARDED_PROTO"] = "https"
+            # The external origin browsers use for stage. Stated here so the
+            # blog never reads it back out of a request header.
+            blog = az("webapp", "show", "-g", GROUP, "-n", app, "--slot", "stage")
+            settings["FANTASY_PUBLIC_ORIGIN"] = f"https://{blog['defaultHostName']}"
         az("rest", "--method", "put",
            "--url", f"{stage_id}/config/appsettings?api-version=2024-11-01",
            "--body", json.dumps({"properties": settings}))

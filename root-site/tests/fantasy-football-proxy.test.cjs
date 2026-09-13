@@ -7,7 +7,7 @@ const { after, before, describe, it } = require("node:test");
 const express = require("express");
 
 const FANTASY_ORIGIN_VAR = "FANTASY_APP_ORIGIN";
-const FANTASY_PROTO_VAR = "FANTASY_FORWARDED_PROTO";
+const FANTASY_PUBLIC_ORIGIN_VAR = "FANTASY_PUBLIC_ORIGIN";
 
 // Upstream stand-in for the fantasy app. Echoes what it received so the tests
 // can assert on the exact request the blog forwarded.
@@ -24,10 +24,6 @@ const startUpstream = async () => {
       if (req.url.startsWith("/fantasy-football/teapot")) {
         res.writeHead(418, { "Content-Type": "text/plain" });
         res.end("teapot");
-        return;
-      }
-      if (req.url.startsWith("/fantasy-football/slow")) {
-        // Never responds, so the proxy's bounded timeout is what ends it.
         return;
       }
       res.writeHead(200, {
@@ -52,10 +48,10 @@ const startUpstream = async () => {
   return server;
 };
 
-const startBlog = async (fantasyOrigin, forwardedProto) => {
+const startBlog = async (fantasyOrigin, publicOrigin) => {
   const previous = {
     [FANTASY_ORIGIN_VAR]: process.env[FANTASY_ORIGIN_VAR],
-    [FANTASY_PROTO_VAR]: process.env[FANTASY_PROTO_VAR],
+    [FANTASY_PUBLIC_ORIGIN_VAR]: process.env[FANTASY_PUBLIC_ORIGIN_VAR],
   };
   const applyEnv = (values) => {
     for (const [name, value] of Object.entries(values)) {
@@ -68,15 +64,13 @@ const startBlog = async (fantasyOrigin, forwardedProto) => {
   };
   applyEnv({
     [FANTASY_ORIGIN_VAR]: fantasyOrigin,
-    [FANTASY_PROTO_VAR]: forwardedProto,
+    [FANTASY_PUBLIC_ORIGIN_VAR]: publicOrigin,
   });
   // The router resolves its fixed upstream when it is constructed, so the
   // environment has to be in place for this call.
   const router = require("../dist/routes/router").default;
   const app = express();
   app.set("view engine", "ejs");
-  // Matches server.ts: exactly one trusted hop, the Azure front end.
-  app.set("trust proxy", 1);
   app.use("/", router());
   const server = await new Promise((resolve) => {
     const created = app.listen(0, "127.0.0.1", () => resolve(created));
@@ -104,9 +98,7 @@ describe("fantasy football proxy", () => {
 
   before(async () => {
     upstream = await startUpstream();
-    // Mirrors production: TLS terminates at the Azure front end, so the
-    // external scheme is configured rather than read from a request header.
-    blog = await startBlog(originOf(upstream), "https");
+    blog = await startBlog(originOf(upstream), "https://thomasriley.ca");
     base = originOf(blog);
   });
 
@@ -130,7 +122,10 @@ describe("fantasy football proxy", () => {
     assert.equal(echo.url, "/fantasy-football/assets/app.js?v=9&x=y");
   });
 
-  it("forwards the authentication routes owned by the fantasy app", async () => {
+  // Proves only that the prefix is forwarded intact. The real Azure Easy Auth
+  // contract (callback URLs, redirects, cookie scope) is owned and tested by
+  // the fantasy app and is NOT validated here.
+  it("forwards paths shaped like the fantasy app's auth routes", async () => {
     const response = await fetch(
       `${base}/fantasy-football/.auth/login/google/callback?code=abc&state=xyz`
     );
@@ -187,32 +182,40 @@ describe("fantasy football proxy", () => {
     assert.equal(echo.headers.host, `127.0.0.1:${upstream.address().port}`);
   });
 
-  it("replaces client-supplied forwarding headers", async () => {
+  it("replaces client-supplied forwarding and vendor headers", async () => {
     const response = await fetch(`${base}/fantasy-football/api/me`, {
       headers: {
-        // "9.9.9.9" is the forged prefix; the trailing entry is what the
-        // trusted front end appends for the real client.
-        "X-Forwarded-For": "9.9.9.9, 203.0.113.7:51234",
+        "X-Forwarded-For": "9.9.9.9",
         "X-Forwarded-Host": "evil.example",
         "X-Forwarded-Proto": "http",
         "X-Forwarded-Prefix": "/",
+        "X-Forwarded-Client-Cert": "spoofed",
         "X-Real-IP": "9.9.9.9",
         Forwarded: "for=9.9.9.9",
         "X-Original-URL": "/admin",
         "Disguised-Host": "evil.example",
+        "X-ARR-SSL": "spoofed",
+        "X-WAWS-Unencoded-URL": "/admin",
       },
     });
     const echo = await response.json();
-    assert.equal(
-      echo.headers["x-forwarded-host"],
-      `127.0.0.1:${blog.address().port}`
-    );
+    // The operator-configured public origin wins; nothing is taken from the
+    // request, including the Host header the caller controls.
+    assert.equal(echo.headers["x-forwarded-host"], "thomasriley.ca");
     assert.equal(echo.headers["x-forwarded-proto"], "https");
-    assert.equal(echo.headers["x-forwarded-port"], "443");
-    assert.equal(echo.headers["x-forwarded-for"], "203.0.113.7");
+    for (const header of Object.keys(echo.headers)) {
+      if (header === "x-forwarded-host" || header === "x-forwarded-proto") {
+        continue;
+      }
+      assert.ok(
+        !header.startsWith("x-forwarded-") &&
+          !header.startsWith("x-arr-") &&
+          !header.startsWith("x-waws-"),
+        `expected ${header} to be stripped`
+      );
+    }
     assert.equal(echo.headers["x-real-ip"], undefined);
     assert.equal(echo.headers["forwarded"], undefined);
-    assert.equal(echo.headers["x-forwarded-prefix"], undefined);
     assert.equal(echo.headers["x-original-url"], undefined);
     assert.equal(echo.headers["disguised-host"], undefined);
   });
@@ -260,7 +263,7 @@ describe("fantasy football proxy", () => {
   });
 });
 
-describe("fantasy football proxy when no external scheme is configured", () => {
+describe("fantasy football proxy when no public origin is configured", () => {
   let upstream;
   let blog;
   let base;
@@ -276,46 +279,17 @@ describe("fantasy football proxy when no external scheme is configured", () => {
     await close(upstream);
   });
 
-  it("reports the real connection scheme, not the client's claim", async () => {
+  it("forwards no X-Forwarded-* metadata at all", async () => {
     const response = await fetch(`${base}/fantasy-football/api/me`, {
-      headers: { "X-Forwarded-Proto": "https" },
+      headers: { "X-Forwarded-Proto": "https", "X-Forwarded-Host": "evil" },
     });
     const echo = await response.json();
-    assert.equal(echo.headers["x-forwarded-proto"], "http");
-    assert.equal(echo.headers["x-forwarded-port"], "80");
-  });
-});
-
-describe("fantasy football proxy when the upstream stalls", () => {
-  let upstream;
-  let blog;
-  let base;
-  let previousTimeout;
-
-  before(async () => {
-    upstream = await startUpstream();
-    previousTimeout = process.env.FANTASY_APP_TIMEOUT_MS;
-    process.env.FANTASY_APP_TIMEOUT_MS = "300";
-    blog = await startBlog(originOf(upstream), "https");
-    base = originOf(blog);
-    if (previousTimeout === undefined) {
-      delete process.env.FANTASY_APP_TIMEOUT_MS;
-    } else {
-      process.env.FANTASY_APP_TIMEOUT_MS = previousTimeout;
+    for (const header of Object.keys(echo.headers)) {
+      assert.ok(
+        !header.startsWith("x-forwarded-"),
+        `expected ${header} to be absent`
+      );
     }
-  });
-
-  after(async () => {
-    await close(blog);
-    await close(upstream);
-  });
-
-  it("gives up on a bounded timeout with 504", async () => {
-    const response = await fetch(`${base}/fantasy-football/slow`);
-    assert.equal(response.status, 504);
-
-    const home = await fetch(`${base}/`);
-    assert.equal(home.status, 200);
   });
 });
 

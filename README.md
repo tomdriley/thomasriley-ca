@@ -13,14 +13,13 @@ Built with TypeScript and Node.js for the server. Uses EJS rendering for pages.
 `/fantasy-football` and everything beneath it is reverse-proxied to a separate
 fantasy football App Service; the two applications and their deployment
 pipelines stay independent. The blog does not enumerate the fantasy app's
-routes, so pages, assets, its API and its `/fantasy-football/.auth/*`
-endpoints all flow through the same prefix, with the prefix preserved.
+routes, so pages, assets and its API all flow through the same prefix, with the
+prefix preserved.
 
 | Setting | Required | Meaning |
 | --- | --- | --- |
 | `FANTASY_APP_ORIGIN` | yes, to enable | Bare upstream origin, e.g. `https://thomasriley-fantasy-w3-pilot-stage.azurewebsites.net`. No path, query or credentials. |
-| `FANTASY_FORWARDED_PROTO` | behind TLS termination | `https` or `http`; the scheme reported to the fantasy app. Defaults to the blog's own connection scheme. |
-| `FANTASY_APP_TIMEOUT_MS` | no | Upstream timeout, default `30000`. |
+| `FANTASY_PUBLIC_ORIGIN` | recommended | The external origin browsers use, e.g. `https://thomasriley.ca`. Supplies `X-Forwarded-Host` and `X-Forwarded-Proto`. When unset, no forwarding metadata is sent. |
 
 Stage and production configure these separately. `bootstrap-stage.py` resolves
 `FANTASY_APP_ORIGIN` for the blog's stage slot from the fantasy app's `stage`
@@ -40,20 +39,31 @@ Behavior worth knowing before changing this code:
 - `/fantasy-football` redirects to `/fantasy-football/` with a 308, so methods
   and bodies survive canonicalization. Similarly named paths such as
   `/fantasy-football-picks` are left to the blog.
-- Client-supplied forwarding and Azure identity headers (`X-Forwarded-*`,
-  `Forwarded`, `X-Real-IP`, `x-ms-client-principal*`, `x-ms-token-*`, and the
-  blog's own `x-arr-*`/`disguised-host` front-end headers) are stripped before
-  the blog sets its own forwarding metadata. The browser's `Origin` is passed
-  through unchanged so the fantasy app can run its own CSRF checks.
-- The blog trusts exactly one hop, its Azure front end (`trust proxy` is `1`).
-  Forwarding headers are not by themselves proof that a request came through
-  the blog; the fantasy app restricts its origin at the network layer.
-- Upstream failures return 502, timeouts 504, and neither affects the rest of
-  the blog. Only the method and path are logged — never query strings, headers
-  or bodies.
+- The whole `x-forwarded-*`, `x-ms-client-principal*`, `x-ms-token-*`,
+  `x-arr-*` and `x-waws-*` namespaces are stripped, along with `Forwarded`,
+  `X-Real-IP` and friends. Namespaces rather than named headers, because
+  enumerating vendor headers is a denylist that is never finished. The blog
+  then states `X-Forwarded-Host`/`-Proto` from `FANTASY_PUBLIC_ORIGIN` — never
+  from the request, not even from `Host`, which a caller controls. The
+  browser's `Origin` is passed through unchanged so the fantasy app can run
+  its own CSRF checks.
+- Forwarding headers are not by themselves proof that a request came through
+  the blog. The fantasy app restricts its origin at the network layer before
+  trusting any of them.
+- Upstream failures and the 30s timeout return 502 without affecting the rest
+  of the blog. Only the method and path are logged — never query strings,
+  headers or bodies.
 - Sharing `thomasriley.ca` means both apps share one browser security origin,
   so a script-injection flaw in the blog can reach a signed-in fantasy user. A
-  path prefix is routing, not isolation.
+  path prefix is routing, not isolation. Note `views/article-page.ejs` renders
+  article HTML unescaped.
+
+Authentication is **not** validated here. The fantasy app's preferred contract
+places its endpoints under `/fantasy-football/.auth/*`, which needs no special
+handling because the prefix is preserved — but whether Azure Easy Auth accepts
+that path, and what its callbacks, redirects and cookie scopes look like, is
+owned and tested by the fantasy app. The test named "forwards paths shaped like
+the fantasy app's auth routes" proves path forwarding only.
 
 `root-site/tests` covers this boundary end to end (prefix preservation, method
 and body forwarding, cookies, redirects, header stripping, upstream failure and
@@ -120,8 +130,7 @@ The article service uses `ARTICLE_DATA_MODE=synthetic` to serve a fixed article;
 database access throws in this mode. The website points only to the stage
 article service, and only to the fantasy app's stage slot for the
 `/fantasy-football/` proxy. Production behavior is unchanged when these flags
-are absent.
-Stage FTP/SCM basic authentication is disabled. No production certificates,
+are absent.Stage FTP/SCM basic authentication is disabled. No production certificates,
 source apps, or production application settings are changed by bootstrap.
 Re-running bootstrap reapplies the stage allowlist but retains its deployed
 image. Existing public GHCR images require no registry password.
