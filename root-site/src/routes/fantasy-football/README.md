@@ -24,9 +24,9 @@ resolves the fantasy *stage* slot and raises rather than falling back to the
 fantasy production app.
 
 When `FANTASY_APP_ORIGIN` is unset the proxy is not mounted, the prefix simply
-404s and no nav link is rendered, so production routing stays off until it is
-configured deliberately; an invalid value returns 503 instead of proxying
-somewhere unintended.
+404s, and production routing stays off until it is configured deliberately;
+an invalid value returns 503 instead of proxying somewhere unintended. The
+nav link is always visible, including when its destination returns an error.
 
 ## Files
 
@@ -42,8 +42,8 @@ somewhere unintended.
   nothing may parse or buffer request bodies ahead of it. Requests stream
   through `http-proxy-middleware`; pages are never fetched and re-rendered.
 - The nav entry is added by this router via `res.locals.navLinks`, which
-  `views/header-nav.ejs` renders generically. It appears only while the proxy
-  is mounted.
+  `views/header-nav.ejs` renders generically. Its visibility does not depend
+  on proxy configuration or upstream availability.
 - Status codes, redirects, `Set-Cookie`, content types and cache-control
   headers are relayed untouched. Cookie and redirect rewriting are
   deliberately not configured — that contract belongs to the fantasy app.

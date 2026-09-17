@@ -94,6 +94,15 @@ const respondWithBadGateway = (req: Request, res: Response): void => {
 const fantasyFootballRouter = (): Router => {
   const router = express.Router();
 
+  // Navigation stays visible even when the proxy is unconfigured.
+  router.use((_req: Request, res: Response, next: NextFunction) => {
+    res.locals.navLinks = [
+      ...(res.locals.navLinks ?? []),
+      { href: `${FANTASY_PREFIX}/`, label: "Fantasy Football" },
+    ];
+    next();
+  });
+
   // The destination is fixed by operator configuration and never derived from
   // the request, so the blog cannot be turned into an open proxy.
   const upstream = readOrigin("FANTASY_APP_ORIGIN");
@@ -181,12 +190,6 @@ const fantasyFootballRouter = (): Router => {
   });
 
   router.use((req: Request, res: Response, next: NextFunction) => {
-    // Advertise the route in the site nav, but only while it is actually
-    // mounted, so an unconfigured environment never links to a 404.
-    res.locals.navLinks = [
-      ...(res.locals.navLinks ?? []),
-      { href: `${FANTASY_PREFIX}/`, label: "Fantasy Football" },
-    ];
     if (!isFantasyPath(req.path)) {
       return next();
     }
