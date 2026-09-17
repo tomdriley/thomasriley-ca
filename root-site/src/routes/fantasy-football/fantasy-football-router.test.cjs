@@ -68,7 +68,7 @@ const startBlog = async (fantasyOrigin, publicOrigin) => {
   });
   // The router resolves its fixed upstream when it is constructed, so the
   // environment has to be in place for this call.
-  const router = require("../dist/routes/router").default;
+  const router = require("../../../dist/routes/router").default;
   const app = express();
   app.set("view engine", "ejs");
   app.use("/", router());

@@ -16,8 +16,8 @@ const router = (): Router => {
   const router = express.Router();
 
   // Hand /fantasy-football and everything beneath it to the fantasy app before
-  // the blog's own static files, pages and 404 handler can claim those paths.
-  // Nothing may parse or buffer the request body ahead of this.
+  // the blog's own handlers can claim those paths. Nothing may parse or buffer
+  // the request body ahead of this.
   router.use(fantasyFootballRouter());
 
   // Serve static files from the "static" directory
