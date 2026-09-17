@@ -8,6 +8,9 @@ Web service to generate front-end of blog site. Communicates with other backend 
 
 Built with TypeScript and Node.js for the server. Uses EJS rendering for pages.
 
+`/fantasy-football/` is reverse-proxied to a separate fantasy football App
+Service. See [`root-site/src/routes/fantasy-football`](root-site/src/routes/fantasy-football/README.md).
+
 To build and test locally:
 
 ```bash
@@ -61,8 +64,9 @@ script deliberately patches only `linuxFxVersion`.
 Stage has an explicit settings allowlist and no database connection strings.
 The article service uses `ARTICLE_DATA_MODE=synthetic` to serve a fixed article;
 database access throws in this mode. The website points only to the stage
-article service. Production behavior is unchanged when this flag is absent.
-Stage FTP/SCM basic authentication is disabled. No production certificates,
+article service, and only to the fantasy app's stage slot for the
+`/fantasy-football/` proxy. Production behavior is unchanged when these flags
+are absent.Stage FTP/SCM basic authentication is disabled. No production certificates,
 source apps, or production application settings are changed by bootstrap.
 Re-running bootstrap reapplies the stage allowlist but retains its deployed
 image. Existing public GHCR images require no registry password.

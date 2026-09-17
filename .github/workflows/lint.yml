@@ -21,6 +21,7 @@ jobs:
         run: |
           cd root-site
           npm run lint
+          npm test
       - name: Install dependencies for article-service
         run: |
           cd article-service

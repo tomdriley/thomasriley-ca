@@ -3,8 +3,10 @@
 Requires an authenticated Azure CLI (AZ) and gh CLI. Never copies production
 connection strings, registry passwords, identities, or certificates.
 """
+import importlib.util
 import json
 import os
+import pathlib
 import subprocess
 import uuid
 
@@ -13,6 +15,17 @@ SUBSCRIPTION = "b9ee5d35-c096-4772-8a56-0529054b4dcf"
 GROUP = "ff-westus3-pilot"
 REPO = "tomdriley/thomasriley-ca"
 RG_ID = f"/subscriptions/{SUBSCRIPTION}/resourceGroups/{GROUP}"
+# Features that own their own stage settings keep them next to their code.
+FANTASY_SETTINGS = (pathlib.Path(__file__).parent.parent
+                    / "root-site/src/routes/fantasy-football/stage-settings.py")
+
+
+def feature_settings(path):
+    """Load a feature's stage_settings(az, group, app) -> dict callable."""
+    spec = importlib.util.spec_from_file_location(path.stem, path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module.stage_settings
 
 
 def run(*args):
@@ -61,6 +74,7 @@ def main():
             article = az("webapp", "show", "-g", GROUP,
                          "-n", "thomasriley-article-w3-pilot", "--slot", "stage")
             settings["ARTICLE_SERVICE_URI"] = f"https://{article['defaultHostName']}"
+            settings.update(feature_settings(FANTASY_SETTINGS)(az, GROUP, app))
         az("rest", "--method", "put",
            "--url", f"{stage_id}/config/appsettings?api-version=2024-11-01",
            "--body", json.dumps({"properties": settings}))
