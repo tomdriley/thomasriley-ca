@@ -3,8 +3,10 @@
 Requires an authenticated Azure CLI (AZ) and gh CLI. Never copies production
 connection strings, registry passwords, identities, or certificates.
 """
+import importlib.util
 import json
 import os
+import pathlib
 import subprocess
 import uuid
 
@@ -12,8 +14,18 @@ AZ = os.environ.get("AZ", "az")
 SUBSCRIPTION = "b9ee5d35-c096-4772-8a56-0529054b4dcf"
 GROUP = "ff-westus3-pilot"
 REPO = "tomdriley/thomasriley-ca"
-FANTASY_APP = "thomasriley-fantasy-w3-pilot"
 RG_ID = f"/subscriptions/{SUBSCRIPTION}/resourceGroups/{GROUP}"
+# Features that own their own stage settings keep them next to their code.
+FANTASY_SETTINGS = (pathlib.Path(__file__).parent.parent
+                    / "root-site/src/routes/fantasy-football/stage-settings.py")
+
+
+def feature_settings(path):
+    """Load a feature's stage_settings(az, group, app) -> dict callable."""
+    spec = importlib.util.spec_from_file_location(path.stem, path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module.stage_settings
 
 
 def run(*args):
@@ -62,22 +74,7 @@ def main():
             article = az("webapp", "show", "-g", GROUP,
                          "-n", "thomasriley-article-w3-pilot", "--slot", "stage")
             settings["ARTICLE_SERVICE_URI"] = f"https://{article['defaultHostName']}"
-            # The blog reverse-proxies /fantasy-football/ to the fantasy app.
-            # Stage must resolve the fantasy *stage* slot; there is deliberately
-            # no fallback to the fantasy production app.
-            fantasy = az("webapp", "show", "-g", GROUP,
-                         "-n", FANTASY_APP, "--slot", "stage")
-            fantasy_host = fantasy["defaultHostName"]
-            if not fantasy_host.startswith(f"{FANTASY_APP}-stage."):
-                raise SystemExit(
-                    f"Unexpected fantasy stage host {fantasy_host!r}; refusing to "
-                    "configure the blog stage slot."
-                )
-            settings["FANTASY_APP_ORIGIN"] = f"https://{fantasy_host}"
-            # The external origin browsers use for stage. Stated here so the
-            # blog never reads it back out of a request header.
-            blog = az("webapp", "show", "-g", GROUP, "-n", app, "--slot", "stage")
-            settings["FANTASY_PUBLIC_ORIGIN"] = f"https://{blog['defaultHostName']}"
+            settings.update(feature_settings(FANTASY_SETTINGS)(az, GROUP, app))
         az("rest", "--method", "put",
            "--url", f"{stage_id}/config/appsettings?api-version=2024-11-01",
            "--body", json.dumps({"properties": settings}))

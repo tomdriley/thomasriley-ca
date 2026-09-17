@@ -105,3 +105,6 @@ dist
 
 # Typescript destination folder
 dist/
+
+# Python bytecode
+__pycache__/

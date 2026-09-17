@@ -6,9 +6,10 @@ pipelines stay independent. The blog does not enumerate the fantasy app's
 routes, so pages, assets and its API all flow through the same prefix, with the
 prefix preserved.
 
-Everything the blog contributes lives in this folder, plus three lines
-elsewhere: one `router.use` in `../router.ts`, one nav link in
-`views/header-nav.ejs`, and the stage settings in `scripts/bootstrap-stage.py`.
+Everything the blog contributes lives in this folder. Outside it the feature
+touches two lines of hand-written code — an `import` and a `router.use` in
+`../router.ts` — plus the npm dependency. The nav entry, the stage app
+settings and the tests are all owned here.
 
 ## Settings
 
@@ -17,18 +18,32 @@ elsewhere: one `router.use` in `../router.ts`, one nav link in
 | `FANTASY_APP_ORIGIN` | yes, to enable | Bare upstream origin, e.g. `https://thomasriley-fantasy-w3-pilot-stage.azurewebsites.net`. No path, query or credentials. |
 | `FANTASY_PUBLIC_ORIGIN` | recommended | The external origin browsers use, e.g. `https://thomasriley.ca`. Supplies `X-Forwarded-Host` and `X-Forwarded-Proto`. When unset, no forwarding metadata is sent. |
 
-Stage and production configure these separately. `bootstrap-stage.py` resolves
-`FANTASY_APP_ORIGIN` for the blog's stage slot from the fantasy app's `stage`
-slot and fails rather than falling back to the fantasy production app. When
-`FANTASY_APP_ORIGIN` is unset the proxy is not mounted and the prefix simply
-404s, so production routing stays off until it is configured deliberately; an
-invalid value returns 503 instead of proxying somewhere unintended.
+`stage-settings.py` supplies both for the blog's stage slot and is loaded by
+`scripts/bootstrap-stage.py`, which holds no fantasy-specific names itself. It
+resolves the fantasy *stage* slot and raises rather than falling back to the
+fantasy production app.
+
+When `FANTASY_APP_ORIGIN` is unset the proxy is not mounted, the prefix simply
+404s and no nav link is rendered, so production routing stays off until it is
+configured deliberately; an invalid value returns 503 instead of proxying
+somewhere unintended.
+
+## Files
+
+| File | |
+| --- | --- |
+| `fantasy-football-router.ts` | the proxy, mounted by `../router.ts` |
+| `fantasy-football-router.test.cjs` | end-to-end tests against a real upstream |
+| `stage-settings.py` | stage app settings, read by the bootstrap script |
 
 ## Behavior worth knowing before changing this code
 
 - The proxy is mounted ahead of the static-file, page and 404 handlers, and
   nothing may parse or buffer request bodies ahead of it. Requests stream
   through `http-proxy-middleware`; pages are never fetched and re-rendered.
+- The nav entry is added by this router via `res.locals.navLinks`, which
+  `views/header-nav.ejs` renders generically. It appears only while the proxy
+  is mounted.
 - Status codes, redirects, `Set-Cookie`, content types and cache-control
   headers are relayed untouched. Cookie and redirect rewriting are
   deliberately not configured — that contract belongs to the fantasy app.

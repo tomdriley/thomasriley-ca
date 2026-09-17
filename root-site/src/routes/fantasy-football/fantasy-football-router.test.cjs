@@ -251,7 +251,14 @@ proxySuite(
 
       const home = await fetch(`${ctx.base}/`);
       assert.equal(home.status, 200);
-      assert.match(await home.text(), /Tom Riley/);
+      const body = await home.text();
+      assert.match(body, /Tom Riley/);
+      assert.match(body, /<a href="\/blog">Blog<\/a>/);
+      // The feature adds its own nav entry rather than the blog hard-coding one.
+      assert.match(
+        body,
+        /<a href="\/fantasy-football\/">Fantasy Football<\/a>/
+      );
 
       const css = await fetch(`${ctx.base}/css/minimal.css`);
       assert.equal(css.status, 200);
@@ -318,6 +325,12 @@ proxySuite(
     it("falls through to the blog 404 handler", async () => {
       const response = await fetch(`${ctx.base}/fantasy-football/dashboard`);
       assert.equal(response.status, 404);
+    });
+
+    it("advertises no nav link, so nothing points at a 404", async () => {
+      const body = await (await fetch(`${ctx.base}/`)).text();
+      assert.match(body, /<a href="\/blog">Blog<\/a>/);
+      assert.doesNotMatch(body, /Fantasy Football/);
     });
   }
 );

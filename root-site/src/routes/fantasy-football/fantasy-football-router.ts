@@ -181,6 +181,12 @@ const fantasyFootballRouter = (): Router => {
   });
 
   router.use((req: Request, res: Response, next: NextFunction) => {
+    // Advertise the route in the site nav, but only while it is actually
+    // mounted, so an unconfigured environment never links to a 404.
+    res.locals.navLinks = [
+      ...(res.locals.navLinks ?? []),
+      { href: `${FANTASY_PREFIX}/`, label: "Fantasy Football" },
+    ];
     if (!isFantasyPath(req.path)) {
       return next();
     }

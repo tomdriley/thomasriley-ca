@@ -15,9 +15,8 @@ const router = (): Router => {
   // Create a new express router
   const router = express.Router();
 
-  // Hand /fantasy-football and everything beneath it to the fantasy app before
-  // the blog's own handlers can claim those paths. Nothing may parse or buffer
-  // the request body ahead of this.
+  // Owns /fantasy-football entirely, including its nav entry. Must stay first:
+  // nothing may parse or buffer the request body ahead of it.
   router.use(fantasyFootballRouter());
 
   // Serve static files from the "static" directory
