@@ -327,10 +327,20 @@ proxySuite(
       assert.equal(response.status, 404);
     });
 
-    it("advertises no nav link, so nothing points at a 404", async () => {
-      const body = await (await fetch(`${ctx.base}/`)).text();
-      assert.match(body, /<a href="\/blog">Blog<\/a>/);
-      assert.doesNotMatch(body, /Fantasy Football/);
+    it("keeps the nav link visible even when its destination returns 404", async () => {
+      for (const [path, status] of [
+        ["/", 200],
+        ["/fantasy-football/", 404],
+      ]) {
+        const response = await fetch(`${ctx.base}${path}`);
+        assert.equal(response.status, status);
+        const body = await response.text();
+        assert.match(body, /<a href="\/blog">Blog<\/a>/);
+        assert.match(
+          body,
+          /<a href="\/fantasy-football\/">Fantasy Football<\/a>/
+        );
+      }
     });
   }
 );
@@ -342,7 +352,12 @@ proxySuite(
     it("returns 503 rather than proxying somewhere unintended", async () => {
       const response = await fetch(`${ctx.base}/fantasy-football/dashboard`);
       assert.equal(response.status, 503);
-      assert.equal((await fetch(`${ctx.base}/`)).status, 200);
+      const home = await fetch(`${ctx.base}/`);
+      assert.equal(home.status, 200);
+      assert.match(
+        await home.text(),
+        /<a href="\/fantasy-football\/">Fantasy Football<\/a>/
+      );
     });
   }
 );

@@ -8,8 +8,7 @@ prefix preserved.
 
 Everything the blog contributes lives in this folder. Outside it the feature
 touches two lines of hand-written code — an `import` and a `router.use` in
-`../router.ts` — plus the npm dependency. The nav entry, the stage app
-settings and the tests are all owned here.
+`../router.ts` — plus the npm dependency. The nav entry and tests are owned here.
 
 ## Settings
 
@@ -18,15 +17,15 @@ settings and the tests are all owned here.
 | `FANTASY_APP_ORIGIN` | yes, to enable | Bare upstream origin, e.g. `https://thomasriley-fantasy-w3-pilot-stage.azurewebsites.net`. No path, query or credentials. |
 | `FANTASY_PUBLIC_ORIGIN` | recommended | The external origin browsers use, e.g. `https://thomasriley.ca`. Supplies `X-Forwarded-Host` and `X-Forwarded-Proto`. When unset, no forwarding metadata is sent. |
 
-`stage-settings.py` supplies both for the blog's stage slot and is loaded by
-`scripts/bootstrap-stage.py`, which holds no fantasy-specific names itself. It
-resolves the fantasy *stage* slot and raises rather than falling back to the
-fantasy production app.
+Configure these settings manually on the blog slot; Azure retains them across
+image deployments. For staging, use the `defaultHostName` of each app's `stage`
+slot, prefixed with `https://`, never the parent/production app. Production
+settings are configured separately.
 
 When `FANTASY_APP_ORIGIN` is unset the proxy is not mounted, the prefix simply
-404s and no nav link is rendered, so production routing stays off until it is
-configured deliberately; an invalid value returns 503 instead of proxying
-somewhere unintended.
+404s, and production routing stays off until it is configured deliberately;
+an invalid value returns 503 instead of proxying somewhere unintended. The
+nav link is always visible, including when its destination returns an error.
 
 ## Files
 
@@ -34,7 +33,6 @@ somewhere unintended.
 | --- | --- |
 | `fantasy-football-router.ts` | the proxy, mounted by `../router.ts` |
 | `fantasy-football-router.test.cjs` | end-to-end tests against a real upstream |
-| `stage-settings.py` | stage app settings, read by the bootstrap script |
 
 ## Behavior worth knowing before changing this code
 
@@ -42,8 +40,8 @@ somewhere unintended.
   nothing may parse or buffer request bodies ahead of it. Requests stream
   through `http-proxy-middleware`; pages are never fetched and re-rendered.
 - The nav entry is added by this router via `res.locals.navLinks`, which
-  `views/header-nav.ejs` renders generically. It appears only while the proxy
-  is mounted.
+  `views/header-nav.ejs` renders generically. Its visibility does not depend
+  on proxy configuration or upstream availability.
 - Status codes, redirects, `Set-Cookie`, content types and cache-control
   headers are relayed untouched. Cookie and redirect rewriting are
   deliberately not configured — that contract belongs to the fantasy app.
